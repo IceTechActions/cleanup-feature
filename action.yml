@@ -1,0 +1,55 @@
+name: Cleanup Feature Environment
+description: >
+  Remove all Azure resources, Key Vault secrets, and container images for a
+  feature environment. Runs the 9-step ordered teardown script.
+  Requires an active Azure CLI session.
+
+inputs:
+  feature_name:
+    description: Feature environment name (e.g. feature-1234)
+    required: true
+  pr_id:
+    description: Pull request number (for Key Vault secret and App Config cleanup)
+    required: true
+  resource_group:
+    description: Azure resource group containing the feature environment
+    required: true
+  dns_zone_resource_group:
+    description: Resource group containing the nisportal.com DNS zone
+    required: true
+  keyvault_name:
+    description: Key Vault name for feature secrets
+    required: true
+  registry_name:
+    description: Azure Container Registry name (without .azurecr.io)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Delete Azure infrastructure
+      shell: bash
+      run: |
+        chmod +x scripts/cleanup-feature-environment.sh
+        scripts/cleanup-feature-environment.sh \
+          "${{ inputs.feature_name }}" \
+          "${{ inputs.resource_group }}" \
+          "fd-nisportal" \
+          "${{ inputs.dns_zone_resource_group }}" \
+          "nisportal.com"
+
+    - name: Remove Key Vault secrets and App Configuration
+      shell: bash
+      run: |
+        chmod +x scripts/remove-secrets.sh
+        scripts/remove-secrets.sh \
+          "${{ inputs.keyvault_name }}" \
+          "${{ inputs.pr_id }}"
+
+    - name: Purge container images from ACR
+      shell: bash
+      run: |
+        chmod +x scripts/purge-containers.sh
+        scripts/purge-containers.sh \
+          "${{ inputs.pr_id }}" \
+          "${{ inputs.registry_name }}"
