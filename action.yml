@@ -15,7 +15,7 @@ inputs:
     description: Azure resource group containing the feature environment
     required: true
   dns_zone_resource_group:
-    description: Resource group containing the nisportal.com DNS zone
+    description: Resource group containing the cust.nisportal.com DNS zone
     required: true
   keyvault_name:
     description: Key Vault name for feature secrets
@@ -35,7 +35,7 @@ runs:
           "${{ inputs.resource_group }}" \
           "fd-nisportal" \
           "${{ inputs.dns_zone_resource_group }}" \
-          "nisportal.com"
+          "cust.nisportal.com"
 
     - name: Remove Key Vault secrets and App Configuration
       shell: bash

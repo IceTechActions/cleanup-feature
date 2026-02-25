@@ -13,7 +13,7 @@ Removes all Azure resources, Key Vault secrets, App Configuration entries, and c
 | `feature_name` | Yes | Feature environment name to remove, e.g. `feature-1234` |
 | `pr_id` | Yes | Pull request number — used to identify Key Vault secrets (`Feature-{pr_id}` prefix) and App Config entries |
 | `resource_group` | Yes | Azure resource group containing the feature environment |
-| `dns_zone_resource_group` | Yes | Resource group containing the `nisportal.com` DNS zone |
+| `dns_zone_resource_group` | Yes | Resource group containing the `cust.nisportal.com` DNS zone |
 | `keyvault_name` | Yes | Key Vault name from which to delete feature secrets |
 | `registry_name` | Yes | Azure Container Registry name (without `.azurecr.io`) from which to purge feature images |
 
@@ -50,7 +50,7 @@ Resources are deleted in dependency order to avoid Azure API conflicts:
 | 4 | Front Door origin |
 | 5 | Front Door origin group |
 | 6 | Front Door endpoint |
-| 7 | DNS CNAME record (`{feature_name}.cust` in `nisportal.com`) |
+| 7 | DNS CNAME record (`{feature_name}` in `cust.nisportal.com`) |
 | 8 | HttpRouteConfig + Nordic and Worker Container Apps |
 | 9 | Hangfire storage mount + storage account |
 | — | Key Vault secrets with `Feature-{pr_id}` prefix (deleted and purged) |
