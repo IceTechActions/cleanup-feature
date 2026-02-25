@@ -15,7 +15,7 @@ inputs:
     description: Azure resource group containing the feature environment
     required: true
   dns_zone_resource_group:
-    description: Resource group containing the nisportal.com DNS zone
+    description: Resource group containing the cust.nisportal.com DNS zone
     required: true
   keyvault_name:
     description: Key Vault name for feature secrets
@@ -30,23 +30,14 @@ runs:
     - name: Delete Azure infrastructure
       shell: bash
       run: |
-        bash "${{ github.action_path }}/scripts/cleanup-feature-environment.sh" \
-          "${{ inputs.feature_name }}" \
-          "${{ inputs.resource_group }}" \
-          "fd-nisportal" \
-          "${{ inputs.dns_zone_resource_group }}" \
-          "nisportal.com"
+        bash "${{ github.action_path }}/scripts/cleanup-feature-environment.sh"           "${{ inputs.feature_name }}"           "${{ inputs.resource_group }}"           "fd-nisportal"           "${{ inputs.dns_zone_resource_group }}"           "cust.nisportal.com"
 
     - name: Remove Key Vault secrets and App Configuration
       shell: bash
       run: |
-        bash "${{ github.action_path }}/scripts/remove-secrets.sh" \
-          "${{ inputs.keyvault_name }}" \
-          "${{ inputs.pr_id }}"
+        bash "${{ github.action_path }}/scripts/remove-secrets.sh"           "${{ inputs.keyvault_name }}"           "${{ inputs.pr_id }}"
 
     - name: Purge container images from ACR
       shell: bash
       run: |
-        bash "${{ github.action_path }}/scripts/purge-containers.sh" \
-          "${{ inputs.pr_id }}" \
-          "${{ inputs.registry_name }}"
+        bash "${{ github.action_path }}/scripts/purge-containers.sh"           "${{ inputs.pr_id }}"           "${{ inputs.registry_name }}"
