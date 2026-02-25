@@ -17,7 +17,7 @@ FEATURE_NAME=$1
 RESOURCE_GROUP=$2
 FRONT_DOOR_NAME=${3:-"fd-nisportal"}
 DNS_ZONE_RG=${4:-""}
-DNS_ZONE_NAME=${5:-"nisportal.com"}
+DNS_ZONE_NAME=${5:-"cust.nisportal.com"}
 # Custom domain base used for FD resource name derivation (not the DNS zone name)
 CUSTOM_DOMAIN_BASE="cust.nisportal.com"
 
@@ -89,7 +89,7 @@ if [ -n "$DNS_ZONE_RG" ]; then
   az network dns record-set cname delete \
     --resource-group "$DNS_ZONE_RG" \
     --zone-name "$DNS_ZONE_NAME" \
-    --name "${FEATURE_NAME}.cust" \
+    --name "$FEATURE_NAME" \
     --yes 2>/dev/null || echo "  DNS record not found or already deleted"
 else
   echo "[7/9] Skipping DNS record deletion (no DNS_ZONE_RG provided)"
