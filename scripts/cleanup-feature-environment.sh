@@ -33,7 +33,7 @@ echo "Front Door: $FRONT_DOOR_NAME"
 echo "============================================"
 
 # 1. Delete Front Door Security Policy
-echo "[1/9] Deleting security policy..."
+echo "[1/10] Deleting security policy..."
 az afd security-policy delete \
   --profile-name "$FRONT_DOOR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
@@ -41,7 +41,7 @@ az afd security-policy delete \
   --yes 2>/dev/null || echo "  Security policy not found or already deleted"
 
 # 2. Delete Front Door Route
-echo "[2/9] Deleting route..."
+echo "[2/10] Deleting route..."
 az afd route delete \
   --profile-name "$FRONT_DOOR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
@@ -50,7 +50,7 @@ az afd route delete \
   --yes 2>/dev/null || echo "  Route not found or already deleted"
 
 # 3. Delete Custom Domain
-echo "[3/9] Deleting custom domain..."
+echo "[3/10] Deleting custom domain..."
 CUSTOM_DOMAIN_NAME=$(echo "${FEATURE_NAME}-${CUSTOM_DOMAIN_BASE}" | tr '.' '-')
 az afd custom-domain delete \
   --profile-name "$FRONT_DOOR_NAME" \
@@ -59,7 +59,7 @@ az afd custom-domain delete \
   --yes 2>/dev/null || echo "  Custom domain not found or already deleted"
 
 # 4. Delete Origin
-echo "[4/9] Deleting origin..."
+echo "[4/10] Deleting origin..."
 az afd origin delete \
   --profile-name "$FRONT_DOOR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
@@ -68,7 +68,7 @@ az afd origin delete \
   --yes 2>/dev/null || echo "  Origin not found or already deleted"
 
 # 5. Delete Origin Group
-echo "[5/9] Deleting origin group..."
+echo "[5/10] Deleting origin group..."
 az afd origin-group delete \
   --profile-name "$FRONT_DOOR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
@@ -76,7 +76,7 @@ az afd origin-group delete \
   --yes 2>/dev/null || echo "  Origin group not found or already deleted"
 
 # 6. Delete Endpoint
-echo "[6/9] Deleting endpoint..."
+echo "[6/10] Deleting endpoint..."
 az afd endpoint delete \
   --profile-name "$FRONT_DOOR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
