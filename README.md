@@ -51,8 +51,9 @@ Resources are deleted in dependency order to avoid Azure API conflicts:
 | 5 | Front Door origin group |
 | 6 | Front Door endpoint |
 | 7 | DNS CNAME record (`{feature_name}` in `cust.nisportal.com`) |
-| 8 | HttpRouteConfig + Nordic and Worker Container Apps |
-| 9 | Hangfire storage mount + storage account |
+| 8 | DNS `_dnsauth.{feature_name}` TXT record (AFD custom domain validation) |
+| 9 | HttpRouteConfig + Nordic and Worker Container Apps |
+| 10 | Hangfire storage mount + storage account |
 | — | Key Vault secrets with `Feature-{pr_id}` prefix (deleted and purged) |
 | — | App Configuration entries with `Feature-{pr_id}` label |
 | — | ACR images tagged `*-Feature-{pr_id}` for `nordic` and `worker` repositories |
