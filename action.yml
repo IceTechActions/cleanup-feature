@@ -1,7 +1,7 @@
 name: Cleanup Feature Environment
 description: >
   Remove all Azure resources, Key Vault secrets, and container images for a
-  feature environment. Runs the 9-step ordered teardown script.
+  feature environment. Runs the 10-step ordered teardown script.
   Requires an active Azure CLI session.
 
 inputs:
