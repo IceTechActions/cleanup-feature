@@ -14,8 +14,11 @@ Removes all Azure resources, Key Vault secrets, App Configuration entries, and c
 | `pr_id` | Yes | Pull request number — used to identify Key Vault secrets (`Feature-{pr_id}` prefix) and App Config entries |
 | `resource_group` | Yes | Azure resource group containing the feature environment |
 | `dns_zone_resource_group` | Yes | Resource group containing the `cust.nisportal.com` DNS zone |
-| `keyvault_name` | Yes | Key Vault name from which to delete feature secrets |
+| `keyvault_name` | Yes | Key Vault name from which to delete feature secrets and retrieve Redis/Elasticsearch credentials |
 | `registry_name` | Yes | Azure Container Registry name (without `.azurecr.io`) from which to purge feature images |
+| `sql_managed_instance` | Yes | SQL Managed Instance name for deleting the feature database |
+| `sql_managed_instance_resource_group` | Yes | Resource group containing the SQL Managed Instance |
+| `elastic8_endpoint` | Yes | Elasticsearch 8 endpoint URL for deleting feature indices |
 
 ## Usage
 
@@ -36,6 +39,9 @@ Removes all Azure resources, Key Vault secrets, App Configuration entries, and c
     dns_zone_resource_group: my-dns-rg
     keyvault_name: my-keyvault
     registry_name: niscontainers
+    sql_managed_instance: my-sqlmi
+    sql_managed_instance_resource_group: my-sqlmi-rg
+    elastic8_endpoint: https://my-elastic.example.com
 ```
 
 ## Teardown Order
@@ -57,5 +63,8 @@ Resources are deleted in dependency order to avoid Azure API conflicts:
 | — | Key Vault secrets with `Feature-{pr_id}` prefix (deleted and purged) |
 | — | App Configuration entries with `Feature-{pr_id}` label |
 | — | ACR images tagged `*-Feature-{pr_id}` for `nordic` and `worker` repositories |
+| — | SQL Managed Instance database `FEATURE_{pr_id}` |
+| — | Redis keys with prefix `Feature_{pr_id}` |
+| — | Elasticsearch indices with prefix `feature_{pr_id}` |
 
 All steps are idempotent — already-deleted resources are skipped without failing.
