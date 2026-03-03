@@ -20,6 +20,15 @@ inputs:
   registry_name:
     description: Azure Container Registry name (without .azurecr.io)
     required: true
+  sql_managed_instance:
+    description: SQL Managed Instance name
+    required: true
+  sql_managed_instance_resource_group:
+    description: Resource group containing the SQL Managed Instance
+    required: true
+  elastic8_endpoint:
+    description: Elasticsearch 8 endpoint URL
+    required: true
 
 runs:
   using: composite
@@ -49,3 +58,42 @@ runs:
         bash "${{ github.action_path }}/scripts/purge-containers.sh" \
           "$PR_ID" \
           "${{ inputs.registry_name }}"
+
+    - name: Delete SQL feature database
+      shell: bash
+      run: |
+        PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
+        az sql midb delete \
+          --managed-instance "${{ inputs.sql_managed_instance }}" \
+          --resource-group "${{ inputs.sql_managed_instance_resource_group }}" \
+          --name "FEATURE_${PR_ID}" --yes --no-wait
+
+    - name: Set up Node.js for Redis cleanup
+      uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+      with:
+        node-version: '22'
+
+    - name: Clean Redis keys
+      shell: bash
+      run: |
+        PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
+        npm install ioredis --prefix /tmp/redis-cleanup
+        NODE_PATH=/tmp/redis-cleanup/node_modules node "${{ github.action_path }}/scripts/clean-redis.js" \
+          "${{ inputs.keyvault_name }}" \
+          "Feature_${PR_ID}"
+
+    - name: Clean Elasticsearch indices
+      shell: bash
+      run: |
+        PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
+        ELASTIC_USERNAME=$(az keyvault secret show \
+          --vault-name "${{ inputs.keyvault_name }}" \
+          --name "Global-Elastic-Username" --query "value" -o tsv)
+        ELASTIC_PASSWORD=$(az keyvault secret show \
+          --vault-name "${{ inputs.keyvault_name }}" \
+          --name "Global-Elastic-Password" --query "value" -o tsv)
+        bash "${{ github.action_path }}/scripts/clean-elastic.sh" \
+          "feature_${PR_ID}" \
+          "${{ inputs.elastic8_endpoint }}" \
+          "$ELASTIC_USERNAME" \
+          "$ELASTIC_PASSWORD"
