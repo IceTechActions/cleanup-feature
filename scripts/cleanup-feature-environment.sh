@@ -56,7 +56,7 @@ az afd custom-domain delete \
   --profile-name "$FRONT_DOOR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --custom-domain-name "$CUSTOM_DOMAIN_NAME" \
-  --yes 2>/dev/null || echo "  Custom domain not found or already deleted"
+  --yes --no-wait 2>/dev/null || echo "  Custom domain not found or already deleted"
 
 # 4. Delete Origin
 echo "[4/10] Deleting origin..."
