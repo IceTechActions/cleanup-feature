@@ -29,6 +29,18 @@ inputs:
   elastic8_endpoint:
     description: Elasticsearch 8 endpoint URL
     required: true
+  skip_sqlmi:
+    description: Skip SQL Managed Instance database deletion (set to 'true' for QA environments which use containerised SQL)
+    required: false
+    default: 'false'
+  skip_redis_cleanup:
+    description: Skip Redis key cleanup steps (set to 'true' for QA environments which use containerised Redis)
+    required: false
+    default: 'false'
+  skip_elastic_cleanup:
+    description: Skip Elasticsearch index cleanup step (set to 'true' for QA environments which use containerised Elastic)
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -60,6 +72,7 @@ runs:
           "${{ inputs.registry_name }}"
 
     - name: Delete SQL feature database
+      if: inputs.skip_sqlmi != 'true'
       shell: bash
       run: |
         PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
@@ -69,11 +82,13 @@ runs:
           --name "FEATURE_${PR_ID}" --yes --no-wait
 
     - name: Set up Node.js for Redis cleanup
+      if: inputs.skip_redis_cleanup != 'true'
       uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
       with:
         node-version: '22'
 
     - name: Clean Redis keys
+      if: inputs.skip_redis_cleanup != 'true'
       shell: bash
       run: |
         PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
@@ -83,6 +98,7 @@ runs:
           "Feature_${PR_ID}"
 
     - name: Clean Elasticsearch indices
+      if: inputs.skip_elastic_cleanup != 'true'
       shell: bash
       run: |
         PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
