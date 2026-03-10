@@ -41,10 +41,6 @@ inputs:
     description: Skip Elasticsearch index cleanup step (set to 'true' for QA environments which use containerised Elastic)
     required: false
     default: 'false'
-  waf_policy_id:
-    description: Full resource ID of the WAF policy. When provided, removes the environment's custom domain from the shared Front Door WAF security policy before teardown.
-    required: false
-    default: ''
   front_door_name:
     description: Azure Front Door profile name
     required: false
@@ -58,7 +54,6 @@ runs:
   using: composite
   steps:
     - name: Compute custom domain resource ID
-      if: inputs.waf_policy_id != ''
       id: domain
       shell: bash
       run: |
@@ -68,12 +63,10 @@ runs:
         echo "id=${DOMAIN_ID}" >> "$GITHUB_OUTPUT"
 
     - name: Disassociate custom domain from WAF security policy
-      if: inputs.waf_policy_id != ''
-      uses: IceTechActions/front-door-waf-domain@55fb9e1b5b37eb8a43251c8e491f459348b8b210 # v1
+      uses: IceTechActions/front-door-waf-domain@1ea6dc5aeab48bf0215d85e0666bb9f7b721da67 # v1
       with:
         profile_name: ${{ inputs.front_door_name }}
         resource_group: ${{ inputs.resource_group }}
-        waf_policy_id: ${{ inputs.waf_policy_id }}
         domain_id: ${{ steps.domain.outputs.id }}
         mode: disassociate
 
