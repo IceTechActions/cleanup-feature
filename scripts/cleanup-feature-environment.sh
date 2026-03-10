@@ -32,13 +32,7 @@ echo "Resource group: $RESOURCE_GROUP"
 echo "Front Door: $FRONT_DOOR_NAME"
 echo "============================================"
 
-# 1. Delete Front Door Security Policy
-echo "[1/10] Deleting security policy..."
-az afd security-policy delete \
-  --profile-name "$FRONT_DOOR_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --security-policy-name "${FEATURE_NAME}-waf" \
-  --yes 2>/dev/null || echo "  Security policy not found or already deleted"
+# 1. [WAF domain disassociation handled by front-door-waf-domain action in action.yml]
 
 # 2. Delete Front Door Route
 echo "[2/10] Deleting route..."

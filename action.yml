@@ -41,10 +41,42 @@ inputs:
     description: Skip Elasticsearch index cleanup step (set to 'true' for QA environments which use containerised Elastic)
     required: false
     default: 'false'
+  waf_policy_id:
+    description: Full resource ID of the WAF policy. When provided, removes the environment's custom domain from the shared Front Door WAF security policy before teardown.
+    required: false
+    default: ''
+  front_door_name:
+    description: Azure Front Door profile name
+    required: false
+    default: fd-nisportal
+  dns_zone_name:
+    description: DNS zone name (e.g. cust.nisportal.com)
+    required: false
+    default: cust.nisportal.com
 
 runs:
   using: composite
   steps:
+    - name: Compute custom domain resource ID
+      if: inputs.waf_policy_id != ''
+      id: domain
+      shell: bash
+      run: |
+        SUB_ID=$(az account show --query id -o tsv)
+        DOMAIN_NAME=$(echo "${{ inputs.feature_name }}-${{ inputs.dns_zone_name }}" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
+        DOMAIN_ID="/subscriptions/${SUB_ID}/resourceGroups/${{ inputs.resource_group }}/providers/Microsoft.Cdn/profiles/${{ inputs.front_door_name }}/customDomains/${DOMAIN_NAME}"
+        echo "id=${DOMAIN_ID}" >> "$GITHUB_OUTPUT"
+
+    - name: Disassociate custom domain from WAF security policy
+      if: inputs.waf_policy_id != ''
+      uses: IceTechActions/front-door-waf-domain@55fb9e1b5b37eb8a43251c8e491f459348b8b210 # v1
+      with:
+        profile_name: ${{ inputs.front_door_name }}
+        resource_group: ${{ inputs.resource_group }}
+        waf_policy_id: ${{ inputs.waf_policy_id }}
+        domain_id: ${{ steps.domain.outputs.id }}
+        mode: disassociate
+
     - name: Delete Azure infrastructure
       shell: bash
       run: |
