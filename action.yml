@@ -67,6 +67,13 @@ inputs:
       Feature environments: 'nordic worker'.
       QA environments: 'nordic worker nis-sql nis-reset-api nis-elastic'.
     required: true
+  container_apps:
+    description: >
+      Space-separated list of Container App name suffixes to delete.
+      Each app is deleted as '{feature_name}-{suffix}'.
+      Feature environments: 'nordic worker'.
+      QA environments: 'nordic worker sql redis elastic reset'.
+    required: true
 
 runs:
   using: composite
@@ -96,7 +103,8 @@ runs:
           "${{ inputs.resource_group }}" \
           "fd-nisportal" \
           "${{ inputs.dns_zone_resource_group }}" \
-          "cust.nisportal.com"
+          "cust.nisportal.com" \
+          "${{ inputs.container_apps }}"
 
     - name: Remove Key Vault secrets and App Configuration
       shell: bash
