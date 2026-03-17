@@ -140,13 +140,19 @@ az storage account delete \
   --resource-group "$RESOURCE_GROUP" \
   --yes 2>/dev/null || echo "  Hangfire storage account not found or already deleted"
 
-# 11. Delete Application Insights
+# 11. Delete Application Insights and its auto-provisioned alert rule
 echo "[11/11] Deleting Application Insights..."
 az resource delete \
   --resource-group "$RESOURCE_GROUP" \
   --resource-type "Microsoft.Insights/components" \
   --name "${FEATURE_NAME}-application-insights" \
   2>/dev/null || echo "  Application Insights not found or already deleted"
+
+az resource delete \
+  --resource-group "$RESOURCE_GROUP" \
+  --resource-type "microsoft.alertsmanagement/smartDetectorAlertRules" \
+  --name "Failure Anomalies - ${FEATURE_NAME}-application-insights" \
+  2>/dev/null || echo "  Smart Detector Alert Rule not found or already deleted"
 
 echo "============================================"
 echo "Cleanup complete for: $FEATURE_NAME"
