@@ -29,37 +29,100 @@ inputs:
   elastic8_endpoint:
     description: Elasticsearch 8 endpoint URL
     required: true
+  skip_sqlmi:
+    description: Skip SQL Managed Instance database deletion (set to 'true' for QA environments which use containerised SQL)
+    required: false
+    default: 'false'
+  skip_redis_cleanup:
+    description: Skip Redis key cleanup steps (set to 'true' for QA environments which use containerised Redis)
+    required: false
+    default: 'false'
+  skip_elastic_cleanup:
+    description: Skip Elasticsearch index cleanup step (set to 'true' for QA environments which use containerised Elastic)
+    required: false
+    default: 'false'
+  front_door_name:
+    description: Azure Front Door profile name
+    required: false
+    default: fd-nisportal
+  dns_zone_name:
+    description: DNS zone name (e.g. cust.nisportal.com)
+    required: false
+    default: cust.nisportal.com
+  secrets_label:
+    description: >
+      Full label used for Key Vault secrets and App Config entries.
+      Feature environments: 'Feature-{PR_ID}' (e.g. 'Feature-1234').
+      QA environments: 'QA-{qa_name}' (e.g. 'QA-QA2610-98c2').
+    required: true
+  image_tag_filter:
+    description: >
+      ACR tag regex filter used to match images for purging.
+      Feature environments: '.*-Feature-{PR_ID}' (e.g. '.*-Feature-1234').
+      QA environments: exact tag (e.g. 'QA2610-98c2').
+    required: true
+  image_repos:
+    description: >
+      Space-separated list of ACR repository names to purge.
+      Feature environments: 'nordic worker'.
+      QA environments: 'nordic worker nis-sql nis-reset-api nis-elastic'.
+    required: true
+  container_apps:
+    description: >
+      Space-separated list of Container App name suffixes to delete.
+      Each app is deleted as '{feature_name}-{suffix}'.
+      Feature environments: 'nordic worker'.
+      QA environments: 'nordic worker sql redis elastic reset'.
+    required: true
 
 runs:
   using: composite
   steps:
+    - name: Compute custom domain resource ID
+      id: domain
+      shell: bash
+      run: |
+        SUB_ID=$(az account show --query id -o tsv)
+        DOMAIN_NAME=$(echo "${{ inputs.feature_name }}-${{ inputs.dns_zone_name }}" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
+        DOMAIN_ID="/subscriptions/${SUB_ID}/resourceGroups/${{ inputs.resource_group }}/providers/Microsoft.Cdn/profiles/${{ inputs.front_door_name }}/customDomains/${DOMAIN_NAME}"
+        echo "id=${DOMAIN_ID}" >> "$GITHUB_OUTPUT"
+
+    - name: Disassociate custom domain from WAF security policy
+      uses: IceTechActions/front-door-waf-domain@8f553b7bfb1a14a1c7962f19701ad872f341285a # v1
+      with:
+        profile_name: ${{ inputs.front_door_name }}
+        resource_group: ${{ inputs.resource_group }}
+        domain_id: ${{ steps.domain.outputs.id }}
+        mode: disassociate
+
     - name: Delete Azure infrastructure
       shell: bash
       run: |
         bash "${{ github.action_path }}/scripts/cleanup-feature-environment.sh" \
           "${{ inputs.feature_name }}" \
           "${{ inputs.resource_group }}" \
-          "fd-nisportal" \
+          "${{ inputs.front_door_name }}" \
           "${{ inputs.dns_zone_resource_group }}" \
-          "cust.nisportal.com"
+          "${{ inputs.dns_zone_name }}" \
+          "${{ inputs.container_apps }}"
 
     - name: Remove Key Vault secrets and App Configuration
       shell: bash
       run: |
-        PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
         bash "${{ github.action_path }}/scripts/remove-secrets.sh" \
           "${{ inputs.keyvault_name }}" \
-          "$PR_ID"
+          "${{ inputs.secrets_label }}"
 
     - name: Purge container images from ACR
       shell: bash
       run: |
-        PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
         bash "${{ github.action_path }}/scripts/purge-containers.sh" \
-          "$PR_ID" \
-          "${{ inputs.registry_name }}"
+          "${{ inputs.image_tag_filter }}" \
+          "${{ inputs.registry_name }}" \
+          "${{ inputs.image_repos }}"
 
     - name: Delete SQL feature database
+      if: inputs.skip_sqlmi != 'true'
       shell: bash
       run: |
         PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
@@ -69,11 +132,13 @@ runs:
           --name "FEATURE_${PR_ID}" --yes --no-wait
 
     - name: Set up Node.js for Redis cleanup
+      if: inputs.skip_redis_cleanup != 'true'
       uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
       with:
         node-version: '22'
 
     - name: Clean Redis keys
+      if: inputs.skip_redis_cleanup != 'true'
       shell: bash
       run: |
         PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
@@ -83,6 +148,7 @@ runs:
           "Feature_${PR_ID}"
 
     - name: Clean Elasticsearch indices
+      if: inputs.skip_elastic_cleanup != 'true'
       shell: bash
       run: |
         PR_ID=$(echo "${{ inputs.feature_name }}" | sed 's/^feature-//')
