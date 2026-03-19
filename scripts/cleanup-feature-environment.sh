@@ -124,21 +124,37 @@ for APP in $CONTAINER_APPS; do
   az containerapp delete --name "${FEATURE_NAME}-${APP}" --resource-group "$RESOURCE_GROUP" --yes 2>/dev/null || true
 done
 
-# 10. Delete per-feature hangfire storage mount and storage account
-echo "[10/11] Deleting hangfire storage..."
-HANGFIRE_MOUNT_NAME="${FEATURE_NAME}-hangfire"
+# 10. Delete per-feature storage mounts and storage accounts
+echo "[10/11] Deleting per-environment storage..."
 CONTAINER_APPS_ENV="feature-environments"
+BASE_NAME=$(echo "${FEATURE_NAME}" | tr -d '-')
+
+# Hangfire
 az containerapp env storage remove \
   --name "$CONTAINER_APPS_ENV" \
   --resource-group "$RESOURCE_GROUP" \
-  --storage-name "$HANGFIRE_MOUNT_NAME" \
+  --storage-name "${FEATURE_NAME}-hangfire" \
   --yes 2>/dev/null || echo "  Hangfire storage mount not found or already deleted"
-
-HANGFIRE_STORAGE_NAME=$(echo "${FEATURE_NAME}" | tr -d '-')storage
 az storage account delete \
-  --name "$HANGFIRE_STORAGE_NAME" \
+  --name "${BASE_NAME}storage" \
   --resource-group "$RESOURCE_GROUP" \
   --yes 2>/dev/null || echo "  Hangfire storage account not found or already deleted"
+
+# SQL backup (nis-sql persistent backup volume — QA environments only)
+az containerapp env storage remove \
+  --name "$CONTAINER_APPS_ENV" \
+  --resource-group "$RESOURCE_GROUP" \
+  --storage-name "${FEATURE_NAME}-sql-mnt" \
+  --yes 2>/dev/null || echo "  SQL mnt-backup storage mount not found or already deleted"
+az containerapp env storage remove \
+  --name "$CONTAINER_APPS_ENV" \
+  --resource-group "$RESOURCE_GROUP" \
+  --storage-name "${FEATURE_NAME}-sql-golden" \
+  --yes 2>/dev/null || echo "  SQL golden storage mount not found or already deleted"
+az storage account delete \
+  --name "${BASE_NAME}sqlbak" \
+  --resource-group "$RESOURCE_GROUP" \
+  --yes 2>/dev/null || echo "  SQL backup storage account not found or already deleted"
 
 # 11. Delete Application Insights and its auto-provisioned alert rule
 echo "[11/11] Deleting Application Insights..."
