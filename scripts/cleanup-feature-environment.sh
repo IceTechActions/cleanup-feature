@@ -28,8 +28,8 @@ FRONT_DOOR_NAME=${3:-"fd-nisportal"}
 DNS_ZONE_RG=${4:-""}
 DNS_ZONE_NAME=${5:-"cust.nisportal.com"}
 CONTAINER_APPS=${6:-"nordic worker"}
-# Custom domain base used for FD resource name derivation (not the DNS zone name)
-CUSTOM_DOMAIN_BASE="cust.nisportal.com"
+# Custom domain base used for FD resource name derivation (derived from DNS zone name)
+CUSTOM_DOMAIN_BASE="$DNS_ZONE_NAME"
 
 if [ -z "$FEATURE_NAME" ] || [ -z "$RESOURCE_GROUP" ]; then
     echo "Usage: $0 <feature-name> <resource-group> [front-door-name] [dns-zone-rg] [dns-zone-name] \"<container-apps>\""
@@ -56,7 +56,7 @@ az afd route delete \
 
 # 3. Delete Custom Domain
 echo "[3/11] Deleting custom domain..."
-CUSTOM_DOMAIN_NAME=$(echo "${FEATURE_NAME}-${CUSTOM_DOMAIN_BASE}" | tr '.' '-')
+CUSTOM_DOMAIN_NAME=$(echo "${FEATURE_NAME}-${CUSTOM_DOMAIN_BASE}" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
 az afd custom-domain delete \
   --profile-name "$FRONT_DOOR_NAME" \
   --resource-group "$RESOURCE_GROUP" \
