@@ -11,13 +11,14 @@
 #   ./purge-containers.sh <tag-filter> <registry-name> "<repos>"
 #
 # Arguments:
-#   tag-filter    ACR tag regex (e.g. '.*-Feature-1234' or 'qa2610-98c2').
+#   tag-filter    Docker tag pattern (e.g. 'Feature-1234' or 'qa2610-98c2').
+#                 Only valid Docker tag characters are allowed: alphanumeric, ., _, -.
 #                 Matched case-insensitively — input casing does not matter.
 #   registry-name ACR name without .azurecr.io
 #   repos         Space-separated list of repository names to purge
 #
 # Examples:
-#   ./purge-containers.sh '.*-Feature-1234' myregistry "nordic worker"
+#   ./purge-containers.sh 'Feature-1234' myregistry "nordic worker"
 #   ./purge-containers.sh 'qa2610-98c2' myregistry "nordic worker nis-sql nis-reset-api nis-elastic"
 # ============================================================
 
@@ -30,9 +31,9 @@ TAG_FILTER=$1
 REGISTRY_NAME=$2
 REPOS=$3
 
-# Validate TAG_FILTER - allow only safe regex characters; disallow forward slash and all shell metacharacters
-if [[ ! "$TAG_FILTER" =~ ^[]a-zA-Z0-9._*?+|^{}[-]+$ ]]; then
-    echo "Error: TAG_FILTER '${TAG_FILTER}' contains invalid characters. Allowed: alphanumeric, ., _, -, *, ?, +, |, ^, {}, []"
+# Validate TAG_FILTER - allow only valid Docker tag characters (alphanumeric, ., _, -)
+if [[ ! "$TAG_FILTER" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+    echo "Error: TAG_FILTER '${TAG_FILTER}' contains invalid characters. Allowed: alphanumeric, ., _, -"
     exit 1
 fi
 
