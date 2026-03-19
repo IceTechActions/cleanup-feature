@@ -127,7 +127,7 @@ done
 # 10. Delete per-feature storage mounts and storage accounts
 echo "[10/11] Deleting per-environment storage..."
 CONTAINER_APPS_ENV="feature-environments"
-BASE_NAME=$(echo "${FEATURE_NAME}" | tr -d '-')
+BASE_NAME=$(echo "${FEATURE_NAME}" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
 
 # Hangfire
 az containerapp env storage remove \
